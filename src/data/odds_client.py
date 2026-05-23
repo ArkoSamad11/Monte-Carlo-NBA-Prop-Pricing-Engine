@@ -21,12 +21,12 @@ def remove_vigorish(over_implied, under_implied):
 
 load_dotenv()
 def get_events_ids():
-    id_list = []
+    events_list = []
     API_KEY = os.getenv('ODDS_API_KEY')
     response = requests.get('https://api.the-odds-api.com/v4/sports/basketball_nba/events', params={'apiKey': API_KEY})
-    for dict in response.json():
-        id_list.append(dict['id'])
-    return id_list
+    for event in response.json():
+        events_list.append({'id': event['id'], 'display': f"{event['away_team']} vs {event['home_team']}"})
+    return events_list
 
 
 def get_market(stat_category):
@@ -66,5 +66,6 @@ def parse_props(response):
     for over in overs:
         key = (over['description'], over['point'])
         if key in unders_map:
-            props.append({'player': over['description'], 'line': over['point'], 'over_odds': over['price'], 'under_odds': unders_map[key]})
+            props.append({
+    'player': over['description'], 'line': over['point'], 'over_odds': over['price'], 'under_odds': unders_map[key], 'sportsbook': bookmaker['title']})
     return props
