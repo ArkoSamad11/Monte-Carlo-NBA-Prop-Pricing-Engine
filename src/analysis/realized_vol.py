@@ -11,4 +11,8 @@ def find_sigma(stat_list):
     sigma = np.std(log_returns)
     if np.isnan(sigma):
         return 0.0
+<<<<<<< HEAD
     return float(sigma)
+=======
+    return float(sigma)
+>>>>>>> 4ebe7d745d0e4970ddf29786bc1a0d1bc8d07616
