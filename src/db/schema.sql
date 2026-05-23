@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 CREATE TABLE player_props(
     id SERIAL PRIMARY KEY,
     player_name VARCHAR(255), 

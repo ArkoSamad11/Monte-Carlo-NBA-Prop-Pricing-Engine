@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pytest pytest-cov numpy scipy
+          pip install pytest pytest-cov numpy scipy nba-api pandas requests
 
       - name: Run tests
         run: |

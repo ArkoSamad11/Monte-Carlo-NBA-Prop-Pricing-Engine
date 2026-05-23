@@ -44,6 +44,7 @@ def stat_information(PlayerFullName, season, stat_category):
         raise ValueError('Only categories are points, rebounds, assists, steals, blocks, threes, or turnovers.')
     return get_stats(PlayerFullName, season)[stat_map[stat_category]].tolist()
 
+
 def get_team_stats(team_name, opponent_team_name, season):
     try:
         stats = leaguedashteamstats.LeagueDashTeamStats(
@@ -74,8 +75,4 @@ def get_context_factors(team_name, opponent_team_name, season, stat_category):
         def_factor = opponent_def_rating / league_avg_def_rating
     else:
         def_factor = 1.0
-<<<<<<< HEAD
     return pace_factor, def_factor
-=======
-    return pace_factor, def_factor
->>>>>>> 4ebe7d745d0e4970ddf29786bc1a0d1bc8d07616

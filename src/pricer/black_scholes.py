@@ -17,8 +17,4 @@ def put(S, K, sigma, T=1/82, r=0):
     return float(K * np.exp(-r*T) * norm.cdf(-d2(S, K, sigma, T, r)) - S * norm.cdf(-d1(S, K, sigma, T, r)))
 
 def black_scholes(S, K, sigma, T=1/82, r=0):
-<<<<<<< HEAD
     return call(S, K, sigma, T, r), put(S, K, sigma, T, r)
-=======
-    return call(S, K, sigma, T, r), put(S, K, sigma, T, r)
->>>>>>> 4ebe7d745d0e4970ddf29786bc1a0d1bc8d07616
