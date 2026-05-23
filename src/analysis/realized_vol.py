@@ -1,8 +1,14 @@
 import numpy as np
 
-# historical volatility formula
 def find_sigma(stat_list):
-    stat_list = np.array(stat_list)
-    log_returns = np.log(stat_list[:-1] / stat_list[1:])
-    sigma = np.std(log_returns) * np.sqrt(82)
-    return sigma
+    if len(stat_list) < 2:
+        return 0.0
+    stat_array = np.array(stat_list, dtype=float)
+    for i in range(len(stat_array)):
+        if stat_array[i] == 0:
+            stat_array[i] = 0.01
+    log_returns = np.log(stat_array[:-1] / stat_array[1:])
+    sigma = np.std(log_returns)
+    if np.isnan(sigma):
+        return 0.0
+    return float(sigma)
