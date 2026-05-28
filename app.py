@@ -1,18 +1,20 @@
 import streamlit as st
 import requests
 from datetime import datetime
-import pandas as pd
 import plotly.graph_objects as go
 
-import streamlit as st
 
-@st.cache_data(ttl=3600)
-def get_roster(home_team, away_team):
-    response = requests.get(
-        'http://localhost:8001/roster',
-        params={'home_team': home_team, 'away_team': away_team}
-    )
-    return response.json()
+@st.cache_data(ttl=1800)
+def fetch_stat_data(player_name, season, stat_category):
+    return requests.get(
+        'http://localhost:8001/statlist',
+        params={
+            'player_name': player_name,
+            'season': season,
+            'stat_category': stat_category
+        }
+    ).json()
+
 
 st.markdown("""
 <style>
@@ -131,35 +133,28 @@ with col_left:
 
 with col_right:
     if find:
-        manual_prop = {
-            'player': manual_player,
-            'line': manual_line,
-            'over_odds': int(manual_over_odds),
-            'under_odds': int(manual_under_odds)
-        }
-        response = requests.post(
-            'http://localhost:8001/log_signal',
-            params={
-                'player_name': manual_player,
-                'season': season,
-                'stat_category': manual_stat.lower(),
-                'bookmaker': bookmaker,
-                'player_team': player_team,
-                'opponent_team': opponent_team
-            },
-            json=manual_prop
-        )
-        result = response.json()
-
-        stat_response = requests.get(
-            'http://localhost:8001/statlist',
-            params={
-                'player_name': manual_player,
-                'season': season,
-                'stat_category': manual_stat.lower()
+        with st.spinner('Analyzing prop...'):
+            manual_prop = {
+                'player': manual_player,
+                'line': manual_line,
+                'over_odds': int(manual_over_odds),
+                'under_odds': int(manual_under_odds)
             }
-        )
-        stat_data = stat_response.json()
+            response = requests.post(
+                'http://localhost:8001/log_signal',
+                params={
+                    'player_name': manual_player,
+                    'season': season,
+                    'stat_category': manual_stat.lower(),
+                    'bookmaker': bookmaker,
+                    'player_team': player_team,
+                    'opponent_team': opponent_team
+                },
+                json=manual_prop
+            )
+            result = response.json()
+
+        stat_data = fetch_stat_data(manual_player, season, manual_stat.lower())
 
         fig = go.Figure()
         fig.add_trace(go.Bar(
@@ -215,17 +210,13 @@ with col_right:
 
                 st.metric(
                     'Edge Gap (MC vs Market)',
-                    str(round(abs(signal['mc_gap']) * 100, 1)) + ' pp'
+                    str(round(abs(signal['mc_gap']) * 100, 1)) + '%'
                 )
 
                 if signal['confidence'] == 'high':
-                    st.success(
-                        'HIGH CONFIDENCE: Monte Carlo and Weighted Empirical Models agree on an edge and direction.'
-                    )
+                    st.success('HIGH CONFIDENCE: Monte Carlo and Weighted Empirical Models agree on an edge and direction.')
                 else:
-                    st.warning(
-                        'MODERATE CONFIDENCE: Monte Carlo and Weighted Empirical Models disagree on a shared edge or direction'
-                    )
+                    st.warning('MODERATE CONFIDENCE: Monte Carlo and Weighted Empirical Models disagree on a shared edge or direction')
 
                 fig2 = go.Figure()
                 fig2.add_trace(go.Histogram(
@@ -283,7 +274,7 @@ with col_right:
 
                 if half_kelly <= 0:
                     st.warning(
-                        'Edge detected on the ' + signal['side'] + ' (' +
+                        'Edge detected on the ' + signal['side'] + '. ' +
                         'Kelly Criterion returns negative EV at current odds. Pass.'
                     )
                 else:
@@ -294,15 +285,9 @@ with col_right:
                         )
                     else:
                         if signal['side'] == 'over':
-                            st.success(
-                                'Bet the UNDER. ' +
-                                'Market overpricing the over.'
-                            )
+                            st.success('Bet the UNDER. Market overpricing the over.')
                         else:
-                            st.success(
-                                'Bet the OVER. ' +
-                                'Market overpricing the under.'
-                            )
+                            st.success('Bet the OVER. Market overpricing the under.')
                     st.info(
                         'Kelly: ' + str(round(p * 100, 1)) + '% win prob at ' +
                         odds_display + ' odds. ' +

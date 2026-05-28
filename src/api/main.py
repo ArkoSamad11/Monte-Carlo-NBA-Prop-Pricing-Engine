@@ -1,6 +1,6 @@
-
 from fastapi import FastAPI
 from pydantic import BaseModel
+from functools import lru_cache
 from src.data.odds_client import get_events_ids, get_odds, parse_props
 from src.data.nba_client import stat_information, get_id
 from src.analysis.mispricing import find_mispricing
@@ -24,6 +24,25 @@ class PropModel(BaseModel):
     under_odds: int
 
 
+@lru_cache(maxsize=128)
+def cached_stat_information(player_name: str, season: str, stat_category: str):
+    return tuple(stat_information(player_name, season, stat_category))
+
+
+@lru_cache(maxsize=32)
+def cached_roster(home_team: str, away_team: str):
+    all_teams = teams.get_teams()
+    player_list = []
+    for team_name in [home_team, away_team]:
+        for t in all_teams:
+            if team_name.lower() in t['full_name'].lower():
+                team_roster = commonteamroster.CommonTeamRoster(team_id=t['id'])
+                df = team_roster.get_data_frames()[0]
+                for player in df['PLAYER'].tolist():
+                    player_list.append(player)
+    return tuple(player_list)
+
+
 @app.get('/events')
 def events():
     return get_events_ids()
@@ -36,22 +55,12 @@ def props(event_id: str, stat_category: str):
 
 @app.get('/statlist')
 def statlist(player_name: str, season: str, stat_category: str):
-    data = stat_information(player_name, season, stat_category)
-    return data
+    return list(cached_stat_information(player_name, season, stat_category))
 
 
 @app.get('/roster')
 def roster(home_team: str, away_team: str):
-    all_teams = teams.get_teams()
-    player_list = []
-    for team_name in [home_team, away_team]:
-        for t in all_teams:
-            if team_name.lower() in t['full_name'].lower():
-                team_roster = commonteamroster.CommonTeamRoster(team_id=t['id'])
-                df = team_roster.get_data_frames()[0]
-                for player in df['PLAYER'].tolist():
-                    player_list.append(player)
-    return player_list
+    return list(cached_roster(home_team, away_team))
 
 
 @app.get('/playerid')

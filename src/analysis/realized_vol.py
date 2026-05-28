@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def find_sigma(stat_list):
     if len(stat_list) < 2:
         return 0.0
@@ -11,3 +12,4 @@ def find_sigma(stat_list):
     sigma = np.std(log_returns)
     if np.isnan(sigma):
         return 0.0
+    return float(sigma)

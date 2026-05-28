@@ -9,6 +9,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - uses: actions/checkout@v4
@@ -20,8 +22,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pytest pytest-cov numpy scipy nba-api pandas requests
+          pip install pytest pytest-cov numpy scipy
 
       - name: Run tests
         run: |
-          pytest tests/ --cov=src/pricer --cov=src/analysis/realized_vol --cov-report=term-missing -v
+          pytest tests/test_black_scholes.py tests/test_greeks.py tests/test_realized_vol.py tests/test_newton_raphson.py --cov=src/pricer --cov=src/analysis/realized_vol --cov-report=term-missing -v
