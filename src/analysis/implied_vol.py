@@ -47,7 +47,7 @@ def monte_carlo_prob(stat_list, K, stat_category, n_simulations=10000, pace_fact
     return prob_over, simulations.tolist()
 
 
-def get_true_prob(stat_list, K):
+def get_true_prob(stat_list, K, bookmaker='DraftKings'):
     weights = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
     weighted_sum = 0
     total_weight = 0
@@ -55,8 +55,12 @@ def get_true_prob(stat_list, K):
         return 0.0
     for i in range(len(stat_list)):
         weight = weights[i]
-        if stat_list[i] > K:
-            weighted_sum += weight
+        if bookmaker == 'Kalshi':
+            if stat_list[i] >= K:
+                weighted_sum += weight
+        else:
+            if stat_list[i] > K:
+                weighted_sum += weight
         total_weight += weight
     return weighted_sum / total_weight
 
@@ -87,7 +91,7 @@ def find_impliedvol(player_name, season, stat_category, prop, player_team=None, 
         bookmaker=bookmaker
     )
     mc_prob_under = 1 - mc_prob_over
-    empirical_prob_over = get_true_prob(stat_list, K)
+    empirical_prob_over = get_true_prob(stat_list, K, bookmaker=bookmaker)
     empirical_prob_under = 1 - empirical_prob_over
 
     return mc_prob_over, mc_prob_under, empirical_prob_over, empirical_prob_under, fair_over, fair_under, realized_vol, S, K, simulations
