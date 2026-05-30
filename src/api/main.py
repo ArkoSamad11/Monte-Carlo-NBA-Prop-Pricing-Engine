@@ -80,12 +80,16 @@ def mispricing(player_name: str, season: str, stat_category: str, prop: PropMode
 
 @app.post('/log_signal')
 def log_signal(player_name: str, season: str, stat_category: str, prop: PropModel, bookmaker: str = 'DraftKings', player_team: str = None, opponent_team: str = None):
-    results = find_mispricing(
-        player_name, season, stat_category,
-        prop.model_dump(),
-        player_team=player_team,
-        opponent_team=opponent_team
-    )
+    try:
+        results = find_mispricing(
+            player_name, season, stat_category,
+            prop.model_dump(),
+            player_team=player_team,
+            opponent_team=opponent_team,
+            bookmaker=bookmaker
+        )
+    except Exception:
+        return []
     session = Session()
     for signal in results:
         record = MispricingSignal(

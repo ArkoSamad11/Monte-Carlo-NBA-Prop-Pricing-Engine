@@ -1,11 +1,12 @@
 from src.analysis.implied_vol import find_impliedvol
 
 
-def find_mispricing(player_name, season, stat_category, prop, player_team=None, opponent_team=None, threshold=0.03):
+def find_mispricing(player_name, season, stat_category, prop, player_team=None, opponent_team=None, threshold=0.03, bookmaker='DraftKings'):
     mc_prob_over, mc_prob_under, empirical_prob_over, empirical_prob_under, fair_over, fair_under, realized_vol, S, K, simulations = find_impliedvol(
         player_name, season, stat_category, prop,
         player_team=player_team,
-        opponent_team=opponent_team
+        opponent_team=opponent_team,
+        bookmaker=bookmaker
     )
 
     results = []

@@ -6,14 +6,17 @@ import numpy as np
 from scipy.stats import nbinom
 
 
-def monte_carlo_prob(stat_list, K, stat_category, n_simulations=10000, pace_factor=1.0, def_factor=1.0):
+def monte_carlo_prob(stat_list, K, stat_category, n_simulations=10000, pace_factor=1.0, def_factor=1.0, bookmaker='DraftKings'):
     stat_array = np.array(stat_list, dtype=float)
     mu_raw = np.mean(stat_array)
     sigma = np.std(stat_array)
     mu = mu_raw * pace_factor * def_factor
 
     if sigma == 0:
-        return (1.0 if mu > K else 0.0), np.full(n_simulations, mu).tolist()
+        if bookmaker == 'Kalshi':
+            return (1.0 if mu >= K else 0.0), np.full(n_simulations, mu).tolist()
+        else:
+            return (1.0 if mu > K else 0.0), np.full(n_simulations, mu).tolist()
 
     variance = sigma ** 2
 
@@ -36,7 +39,11 @@ def monte_carlo_prob(stat_list, K, stat_category, n_simulations=10000, pace_fact
                 size=n_simulations
             )
 
-    prob_over = float(np.sum(simulations > K) / n_simulations)
+    if bookmaker == 'Kalshi':
+        prob_over = float(np.sum(simulations >= K) / n_simulations)
+    else:
+        prob_over = float(np.sum(simulations > K) / n_simulations)
+
     return prob_over, simulations.tolist()
 
 
@@ -54,7 +61,7 @@ def get_true_prob(stat_list, K):
     return weighted_sum / total_weight
 
 
-def find_impliedvol(player_name, season, stat_category, prop, player_team=None, opponent_team=None):
+def find_impliedvol(player_name, season, stat_category, prop, player_team=None, opponent_team=None, bookmaker='DraftKings'):
     stat_list = stat_info(player_name, season, stat_category)
     realized_vol = find_sigma(stat_list)
     S = sum(stat_list) / len(stat_list)
@@ -76,7 +83,8 @@ def find_impliedvol(player_name, season, stat_category, prop, player_team=None, 
     mc_prob_over, simulations = monte_carlo_prob(
         stat_list, K, stat_category,
         pace_factor=pace_factor,
-        def_factor=def_factor
+        def_factor=def_factor,
+        bookmaker=bookmaker
     )
     mc_prob_under = 1 - mc_prob_over
     empirical_prob_over = get_true_prob(stat_list, K)
