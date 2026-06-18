@@ -39,7 +39,7 @@ def find_mispricing(player_name, season, stat_category, prop, player_team=None, 
                      rolling_avg: Raw unweighted rolling average for the player in the selected
                                   stat without pace or DRTG adjustment (Float).
                      simulations: List of 10,000 simulated outcomes for dashboard visualization (List).
-    """
+        """
     
     mc_prob_over, mc_prob_under, empirical_prob_over, empirical_prob_under, fair_over, fair_under, realized_vol, S, K, 
     simulations = find_impliedvol(player_name, season, stat_category, prop, player_team=player_team, opponent_team=opponent_team, bookmaker=bookmaker)
