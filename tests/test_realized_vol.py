@@ -15,20 +15,23 @@ def test_positive_volatility():
 
 
 def test_zero_volatility_constant_series():
-    # constant series has zero log returns — sigma should be 0
+    # constant series has zero log returns 
+    # sigma should be 0
     result = find_sigma([20, 20, 20, 20, 20, 20, 20, 20, 20, 20])
     assert result == 0.0
 
 
 def test_zero_values_replaced():
-    # zero values get replaced with 0.01 — should not crash
+    # zero values get replaced with 0.01 
+    # should not crash
     result = find_sigma([0, 20, 0, 22, 18, 0, 21, 19, 23, 20])
     assert isinstance(result, float)
     assert result >= 0
 
 
 def test_all_zeros_does_not_crash():
-    # all zeros replaced with 0.01 — constant series gives zero sigma
+    # all zeros replaced with 0.01 
+    # constant series gives zero sigma
     result = find_sigma([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     assert result == 0.0
 
@@ -41,13 +44,15 @@ def test_high_variance_series():
 
 
 def test_single_element_list():
-    # single element produces no log returns — should return 0.0
+    # single element produces no log returns 
+    # should return 0.0
     result = find_sigma([20])
     assert result == 0.0
 
 
 def test_two_element_list():
-    # two elements produces one log return — std of single value is 0
+    # two elements produces one log return 
+    # std of single value is 0
     result = find_sigma([20, 25])
     assert result == 0.0
 
