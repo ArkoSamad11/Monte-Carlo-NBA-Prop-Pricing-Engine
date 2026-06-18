@@ -115,6 +115,7 @@ def find_impliedvol(player_name, season, stat_category, prop, player_team=None, 
         player_name: Name of the player (String).
         season: Name of the season in the format 20XX - YY that is passed into the NBA Stats API (String).
         stat_category: The selected stat for the player prop (String).
+        prop: Dictionary containing the prop line and market odds (Dict).
         player_team: Initialized to None. The team that the selected player is on (String).
         opponent_team: Initialized to None. The team that the selected player is playing against (String).
         bookmaker: Initialized to DraftKings, affects the produced probability as sportsbook hit
@@ -125,7 +126,7 @@ def find_impliedvol(player_name, season, stat_category, prop, player_team=None, 
             mc_prob_under: Number between 0 and 1 representing the Monte Carlo probability of the under hitting (Float).
             empirical_prob_over: Number between 0 and 1 representing the Weighted Empirical probability of the over hitting (Float).
             empirical_prob_under: Number between 0 and 1 representing the Weighted Empirical probability of the under hitting (Float).
-            fair_over: The market's probabiltiy of the over hitting with vig removed (Float).
+            fair_over: The market's probability of the over hitting with vig removed (Float).
             fair_under: The market's probability of the under hitting with vig removed (Float).
             realized_vol: Log Return Std. Dev. of the player's performance in that stat across the L10 qualified games (Float).
             S: The raw rolling average for the player in the selected stat without adjustment for PACE or DRTG (Float).
