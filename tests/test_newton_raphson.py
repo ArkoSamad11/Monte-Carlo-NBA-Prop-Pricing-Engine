@@ -33,13 +33,15 @@ def test_recovers_low_sigma():
 
 
 def test_returns_none_for_zero_market_price():
-    # zero market price causes vega to go near zero — should return None
+    # zero market price causes vega to go near zero 
+    # should return None
     result = newton_raphson_iv(0.0, S=27.3, K=25.5, T=1/82, r=0, option_type='call')
     assert result is None or isinstance(result, float)
 
 
 def test_returns_none_for_impossible_price():
-    # market price higher than S is impossible for a call — should return None
+    # market price higher than S is impossible for a call
+    # should return None
     result = newton_raphson_iv(999.0, S=27.3, K=25.5, T=1/82, r=0, option_type='call')
     assert result is None
 
