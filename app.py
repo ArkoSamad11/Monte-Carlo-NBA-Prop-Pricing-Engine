@@ -24,7 +24,7 @@ BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:8001')
 # ttl=1800 limits API calls to once per 30 minutes for the same player/season/stat combination.
 def fetch_stat_data(player_name, season, stat_category):
     return requests.get(
-        'http://localhost:BACKEND_URL/statlist',
+        f'{BACKEND_URL}/statlist',
         params={
             'player_name': player_name,
             'season': season,
@@ -73,7 +73,7 @@ else:
     season = str(year - 1) + '-' + str(year)[2:]
 
 # Fetch available NBA games from the backend to populate the game selection dropdown.
-events_response = requests.get('http://localhost:BACKEND_URL/events')
+events_response = requests.get(f'{BACKEND_URL}/events')
 events = events_response.json()
 
 event_display = []
@@ -92,7 +92,7 @@ with col_left:
     home_team = teams_in_game[1]
 
     roster_response = requests.get(
-        'http://localhost:8001/roster',
+        f'{BACKEND_URL}/roster',
         params={'home_team': home_team, 'away_team': away_team}
     )
     roster = roster_response.json()
@@ -102,7 +102,7 @@ with col_left:
     # Fetch the home team's roster separately to determine which team the selected
     # player is on
     home_roster_response = requests.get(
-        'http://localhost:BACKEND_URL/roster',
+        f'{BACKEND_URL}/roster',
         params={'home_team': home_team, 'away_team': home_team}
     )
     home_roster = home_roster_response.json()
@@ -115,7 +115,7 @@ with col_left:
         opponent_team = home_team
 
     player_id_response = requests.get(
-        'http://localhost:BACKEND_URL/playerid',
+        f'{BACKEND_URL}/roster',
         params={'player_name': manual_player}
     )
     player_id = player_id_response.json()['id']
@@ -166,7 +166,7 @@ with col_right:
                 'under_odds': int(manual_under_odds)
             }
             response = requests.post(
-                'http://localhost:BACKEND_URL/log_signal',
+                f'{BACKEND_URL}/log_signal',
                 params={
                     'player_name': manual_player,
                     'season': season,
