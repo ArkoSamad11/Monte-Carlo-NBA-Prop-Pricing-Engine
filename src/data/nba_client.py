@@ -17,29 +17,27 @@ def get_id(PlayerFullName):
 
     Args:
         PlayerFullName: Full name of the player as it appears in the NBA Stats API (String).
-        
+
     Returns:
         An integer representing the player's unique NBA Stats API ID.
     """
-    
     playerdict = players.find_players_by_full_name(PlayerFullName)
     return playerdict[0]['id']
 
 
 def get_stats(PlayerFullName, season):
-     """
+    """
     Fetches the player's most recent qualifying last 10 game logs from the NBA Stats API,
     Games where the player recorded fewer than 20 or more than 48 minutes are excluded.
 
     Args:
         PlayerFullName: Full name of the player as it appears in the NBA Stats API (String).
         season: Season in the format 20XX-YY passed into the NBA Stats API (String).
-        
+
     Returns:
         A DataFrame of up to 10 qualifying games containing columns:
         PTS, REB, AST, STL, BLK, FG3M/3PM, TOV. Ordered most-recent-first.
     """
-    
     for attempt in range(3):
         try:
             time.sleep(NBA_API_DELAY)
@@ -84,7 +82,7 @@ def stat_information(PlayerFullName, season, stat_category):
     Returns:
         A list of up to 10 floats representing the player's most recent qualifying
         game values for the selected stat, ordered most-recent-first.
-        
+
     Raises:
         ValueError: If stat_category is not one of the seven supported categories.
     """
@@ -117,11 +115,10 @@ def _fetch_team_logs(season, season_type):
         to identify the source after concatenation. Returns an empty DataFrame if
         the API returns no data for the given season and season type.
     """
-    
     logs = teamgamelogs.TeamGameLogs(
-    season_nullable=season,
-    season_type_nullable=season_type,
-    measure_type_player_game_logs_nullable='Advanced'
+        season_nullable=season,
+        season_type_nullable=season_type,
+        measure_type_player_game_logs_nullable='Advanced'
     )
     df = logs.get_data_frames()[0]
     if df.empty:
@@ -134,7 +131,7 @@ def _fetch_team_logs(season, season_type):
 def _find_team_rows(df, team_name):
     """
     Filters a team game log DataFrame to rows matching the given team name.
-    
+
     Args:
         df: DataFrame of team game logs returned by _fetch_team_logs (DataFrame).
         team_name: Full or partial team name to filter by (String).
@@ -155,7 +152,7 @@ def _recent_team_average(df, team_name, n_games=10):
         df: DataFrame of team game logs returned by _fetch_team_logs (DataFrame).
         team_name: Full or partial team name to filter by (String).
         n_games: Number of most recent games to average over. Defaults to 10 (Integer).
-        
+
     Returns:
         A dictionary containing:
             pace: Average team pace over the n_games window (Float).
@@ -164,13 +161,12 @@ def _recent_team_average(df, team_name, n_games=10):
                         less than n_games if fewer qualifying games are available (Integer).
         Returns None if no matching team rows are found in the DataFrame.
     """
-    
     team_df = _find_team_rows(df, team_name)
     if team_df.empty:
         return None
-     # Sort descending by date and take the n most recent games.
+    # Sort descending by date and take the n most recent games.
     team_df = team_df.sort_values('GAME_DATE', ascending=False).head(n_games)
-    return {'pace': team_df['PACE'].mean(),'def_rating': team_df['DEF_RATING'].mean(),'games_used': len(team_df)}
+    return {'pace': team_df['PACE'].mean(), 'def_rating': team_df['DEF_RATING'].mean(), 'games_used': len(team_df)}
 
 
 def get_team_stats(team_name, opponent_team_name, season):
@@ -186,7 +182,7 @@ def get_team_stats(team_name, opponent_team_name, season):
         team_name: Full or partial name of the player's team (String).
         opponent_team_name: Full or partial name of the opponent team (String).
         season: Season in the format 20XX-YY passed into the NBA Stats API (String).
-        
+
     Returns:
         A tuple of four floats:
             team_pace: Weighted average pace for the player's team (Float).
@@ -199,7 +195,6 @@ def get_team_stats(team_name, opponent_team_name, season):
         player's expected output unadjusted rather than distorting it with
         erroneous values.
     """
-    
     try:
         regular_df = _fetch_team_logs(season, 'Regular Season')
         playoff_df = _fetch_team_logs(season, 'Playoffs')
@@ -252,6 +247,7 @@ def get_team_stats(team_name, opponent_team_name, season):
         # 1.0, leaving the player's expected output unadjusted.
         return 98.5, 98.5, 113.0, 113.0
 
+
 def get_context_factors(team_name, opponent_team_name, season, stat_category):
     """
     Computes pace and defensive context multipliers used to adjust a player's
@@ -268,15 +264,14 @@ def get_context_factors(team_name, opponent_team_name, season, stat_category):
             pace_factor: Ratio of the player's team pace to league average pace.
                          > 1.0 means faster than league average
                          < 1.0 means slower than league average (Float).
-           def_factor: Ratio of the opponent's defensive rating to league average
-            defensive rating. > 1.0 means a weaker than average defense
-            (player's expected output scaled up). < 1.0 means a stronger
-            than average defense (player's expected output scaled down).
-            Only applied for points, threes, and assists. Defaults to 1.0
-            for all other stat categories since defensive rating measures
-            points allowed per 100 possessions and does not reliably
-            predict suppression of rebounds, steals, blocks, or turnovers (Float).
-                        
+            def_factor: Ratio of the opponent's defensive rating to league average
+                        defensive rating. > 1.0 means a weaker than average defense
+                        (player's expected output scaled up). < 1.0 means a stronger
+                        than average defense (player's expected output scaled down).
+                        Only applied for points, threes, and assists. Defaults to 1.0
+                        for all other stat categories since defensive rating measures
+                        points allowed per 100 possessions and does not reliably
+                        predict suppression of rebounds, steals, blocks, or turnovers (Float).
     """
     team_pace, league_avg_pace, opponent_def_rating, league_avg_def_rating = get_team_stats(team_name, opponent_team_name, season)
     pace_factor = team_pace / league_avg_pace
