@@ -27,7 +27,6 @@ def american_to_implied(odds):
         return (100) / (odds + 100)
          
 def remove_vigorish(over_implied, under_implied):
-    pythondef remove_vigorish(over_implied, under_implied):
     """
     Removes the sportsbook's margin (vig) from raw implied probabilities so both
     sides sum to exactly 1.0, producing the sportsbook's true believed probability
