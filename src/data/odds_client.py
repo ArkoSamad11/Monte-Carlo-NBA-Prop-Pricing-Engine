@@ -5,9 +5,8 @@ import os
 
 
 def american_to_implied(odds):
-     """
+    """
     Converts American odds to an implied probability.
-
     Args:
         odds: American odds for one side of a prop (Integer).
               Negative odds indicate the favorite (e.g. -110).
@@ -15,21 +14,18 @@ def american_to_implied(odds):
     Returns:
         A float representing the raw implied probability including the sportsbook's
         vig.
-        
     Raises:
         AssertionError: If odds is not an integer.
         ValueError: If odds is 0, which is not a valid American odds value.
     """
-    
     assert type(odds) == int
     if odds == 0:
         raise ValueError('Odds cannot be equivalent to 0')
     if odds < 0:
-        return (abs(odds)) / (abs(odds)+100)
+        return (abs(odds)) / (abs(odds) + 100)
     elif odds > 0:
         return (100) / (odds + 100)
-    
-
+         
 def remove_vigorish(over_implied, under_implied):
     pythondef remove_vigorish(over_implied, under_implied):
     """
