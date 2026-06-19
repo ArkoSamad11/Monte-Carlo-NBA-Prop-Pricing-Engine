@@ -76,6 +76,16 @@ else:
 events_response = requests.get(f'{BACKEND_URL}/events')
 events = events_response.json()
 
+if not events:
+    st.warning('No NBA games currently available. Check back during the season.')
+    st.stop()
+
+event_display = []
+event_ids = []
+for e in events:
+    event_display.append(e['display'])
+    event_ids.append(e['id'])
+
 event_display = []
 event_ids = []
 for e in events:
