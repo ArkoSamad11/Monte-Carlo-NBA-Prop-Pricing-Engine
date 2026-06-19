@@ -1,3 +1,16 @@
+"""
+Monte Carlo NBA Prop Pricing Engine's Streamlit Dashboard
+
+Interactive dashboard for real-time player prop analysis. Fetches live game
+and roster data from the FastAPI backend, runs the Monte Carlo pricing engine
+against manually entered prop lines, and displays probability comparisons,
+edge detection, Kelly Criterion position sizing, and the simulated stat
+distribution for the selected player and prop.
+
+All backend communication is handled via HTTP requests to the FastAPI server.
+The dashboard does not perform any computation directly.
+"""
+
 import streamlit as st
 import requests
 from datetime import datetime
@@ -5,6 +18,8 @@ import plotly.graph_objects as go
 
 
 @st.cache_data(ttl=1800)
+# Fetches and caches the player's last 10 qualifying game values for the selected stat.
+# ttl=1800 limits API calls to once per 30 minutes for the same player/season/stat combination.
 def fetch_stat_data(player_name, season, stat_category):
     return requests.get(
         'http://localhost:8001/statlist',
@@ -47,6 +62,7 @@ st.markdown("""
 
 st.title('NBA Player Prop Volatility Engine')
 
+# Determine the current NBA season string in 20XX-YY format.
 year = datetime.now().year
 month = datetime.now().month
 if month >= 10:
@@ -54,6 +70,7 @@ if month >= 10:
 else:
     season = str(year - 1) + '-' + str(year)[2:]
 
+# Fetch available NBA games from the backend to populate the game selection dropdown.
 events_response = requests.get('http://localhost:8001/events')
 events = events_response.json()
 
@@ -80,6 +97,8 @@ with col_left:
 
     manual_player = st.selectbox('Select player', roster)
 
+    # Fetch the home team's roster separately to determine which team the selected
+    # player is on
     home_roster_response = requests.get(
         'http://localhost:8001/roster',
         params={'home_team': home_team, 'away_team': home_team}
@@ -109,6 +128,9 @@ with col_left:
     manual_under_odds = st.number_input('Under odds (e.g. -120)', step=1, value=-120)
 
     st.write('Using a prediction market? Enter probability instead:')
+    # Prediction markets like Kalshi publish contract probabilities rather than
+    # American odds. This converts an entered probability to equivalent American
+    # odds so the same pipeline handles both sportsbook and prediction market inputs.
     use_prob = st.checkbox('Enter as probability')
     if use_prob:
         over_prob = st.number_input('Hit probability (e.g. 72 for 72%)', min_value=0.0, max_value=100.0, step=1.0)
@@ -128,7 +150,8 @@ with col_left:
                 manual_under_odds = int(((1 - prob_under) / prob_under) * 100)
             st.write('Converted over odds: ' + str(manual_over_odds))
             st.write('Converted under odds: ' + str(manual_under_odds))
-
+    # Submits the prop for analysis. Triggers the full Monte Carlo pipeline via
+    # the /log_signal endpoint and persists any detected signal to the database.
     find = st.button('Find Mispricing')
 
 with col_right:
@@ -242,7 +265,10 @@ with col_right:
                     font_color='white'
                 )
                 st.plotly_chart(fig2)
-
+                
+                # Determine the correct odds and win probability for Kelly sizing based on
+                # direction and side. For underpriced signals bet the flagged side at its
+                # odds. For overpriced signals fade the flagged side using the opposite odds.
                 if signal['direction'] == 'underpriced':
                     if signal['side'] == 'over':
                         odds_for_kelly = manual_over_odds
@@ -271,7 +297,10 @@ with col_right:
                     odds_display = '+' + str(round((decimal_odds - 1) * 100))
                 else:
                     odds_display = str(round(-100 / (decimal_odds - 1)))
-
+                    
+                # Kelly Criterion: f* = (p*b - q) / b where b is the decimal odds minus 1.
+                # Half Kelly and Quarter Kelly are displayed as calibration-informed sizing
+                # alternatives.
                 if half_kelly <= 0:
                     st.warning(
                         'Edge detected on the ' + signal['side'] + '. ' +
