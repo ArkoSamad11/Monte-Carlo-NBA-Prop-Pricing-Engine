@@ -65,7 +65,7 @@ def get_events_ids():
                      game selection dropdown in the dashboard (String).
     """
     events_list = []
-    # Retrieve the API key from environment variables — never hardcode API keys.
+    # Retrieve the API key from environment variables
     API_KEY = os.getenv('ODDS_API_KEY')
     response = requests.get('https://api.the-odds-api.com/v4/sports/basketball_nba/events', params={'apiKey': API_KEY})
     for event in response.json():
@@ -119,7 +119,6 @@ def get_odds(event_id, stat_category):
         AssertionError: If event_id is not a string.
     """
     assert type(event_id) == str
-    # Retrieve the API key from environment variables — never hardcode API keys.
     API_KEY = os.getenv('ODDS_API_KEY')
     # Map the user-facing stat category to the Odds API market key.
     market = get_market(stat_category)
