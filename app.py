@@ -15,6 +15,8 @@ import streamlit as st
 import requests
 from datetime import datetime
 import plotly.graph_objects as go
+import os
+BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:8001')
 
 
 @st.cache_data(ttl=1800)
@@ -22,7 +24,7 @@ import plotly.graph_objects as go
 # ttl=1800 limits API calls to once per 30 minutes for the same player/season/stat combination.
 def fetch_stat_data(player_name, season, stat_category):
     return requests.get(
-        'http://localhost:8001/statlist',
+        'http://localhost:BACKEND_URL/statlist',
         params={
             'player_name': player_name,
             'season': season,
@@ -60,7 +62,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title('NBA Player Prop Volatility Engine')
+st.title('Monte Carlo NBA Prop Pricing Engine')
 
 # Determine the current NBA season string in 20XX-YY format.
 year = datetime.now().year
@@ -71,7 +73,7 @@ else:
     season = str(year - 1) + '-' + str(year)[2:]
 
 # Fetch available NBA games from the backend to populate the game selection dropdown.
-events_response = requests.get('http://localhost:8001/events')
+events_response = requests.get('http://localhost:BACKEND_URL/events')
 events = events_response.json()
 
 event_display = []
@@ -100,7 +102,7 @@ with col_left:
     # Fetch the home team's roster separately to determine which team the selected
     # player is on
     home_roster_response = requests.get(
-        'http://localhost:8001/roster',
+        'http://localhost:BACKEND_URL/roster',
         params={'home_team': home_team, 'away_team': home_team}
     )
     home_roster = home_roster_response.json()
@@ -113,7 +115,7 @@ with col_left:
         opponent_team = home_team
 
     player_id_response = requests.get(
-        'http://localhost:8001/playerid',
+        'http://localhost:BACKEND_URL/playerid',
         params={'player_name': manual_player}
     )
     player_id = player_id_response.json()['id']
@@ -164,7 +166,7 @@ with col_right:
                 'under_odds': int(manual_under_odds)
             }
             response = requests.post(
-                'http://localhost:8001/log_signal',
+                'http://localhost:BACKEND_URL/log_signal',
                 params={
                     'player_name': manual_player,
                     'season': season,
