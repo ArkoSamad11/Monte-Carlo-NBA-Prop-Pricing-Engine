@@ -176,8 +176,6 @@ def mispricing(player_name: str, season: str, stat_category: str, prop: PropMode
 
 @app.post('/log_signal')
 def log_signal(player_name: str, season: str, stat_category: str, prop: PropModel, bookmaker: str = 'DraftKings', player_team: str = None, opponent_team: str = None):
-    @app.post('/log_signal')
-def log_signal(player_name: str, season: str, stat_category: str, prop: PropModel, bookmaker: str = 'DraftKings', player_team: str = None, opponent_team: str = None):
     """
     Runs mispricing analysis and persists any detected signal to the database.
     Called when the user clicks 'Find Mispricing' in the dashboard after reviewing a prop.
