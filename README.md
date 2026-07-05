@@ -19,7 +19,110 @@
 * Across the 622 live markets analyzed, the model correctly predicted 55.6% props. Of the 317 DraftKings markets, 55.5% of predictions were correct. Meanwhile, 55.7% of the 305 Kalshi markets were correctly predicted.
 * Based on empirical observations and game film, adjustments were made to the model after 221 props. In the WCF, varying game plans for players such as Shai Gilgeous-Alexander and Victor Wembanyama motivated the introduction of a PACE factor, a DRTG factor, and a weighting factor to split impact 60%/40 between the last 10 and last 3 game stats, which affected the mean when performing Monte Carlo simulations.
 * Before the weighting adjustment, the model recorded 49.5% accuracy across 95 props (id < 221). The 622 props reported above reflect post-weighting performance only.
-* $$SE_{null} = \sqrt{\frac{p_0 \times (1 - p_0)}{n}} = \sqrt{\frac{0.50 \times 0.50}{622}} = \sqrt{\frac{0.25}{622}} \approx 0.02005$$. $$Z = \frac{p - p_0}{SE_{null}} = \frac{0.556 - 0.500}{0.02005} \approx \mathbf{2.79}$$. $p \approx \mathbf{0.0026}$.
-* $$SE_{sample} = \sqrt{\frac{p \times (1 - p)}{n}} = \sqrt{\frac{0.556 \times 0.444}{622}} \approx 0.01992$$. $$ME = 1.96 \times SE_{sample} = 1.96 \times 0.01992 \approx \mathbf{0.0390}$$. $$CI = $$[51.7\%, 59.5\%]
+* Observed accuracy: 55.6% (622 markets)
+* Calibration Analysis: Model best reflects true probability when the displayed bet probability is in the range 60-65%. The difference between the actual average win rate and predicted average win rate is 0.8%. Percentages below and above this bucket, the model typically is primarily overconfident.
 
-**WORK IN PROGRESS!**
+Null hypothesis: p = 0.50
+
+Z-statistic: 2.79
+
+p-value (one-tailed): 0.0026
+
+95% CI: [51.7%, 59.5%]
+
+## System Architecture
+
+NBA Stats API
+     ↓
+     
+Data Ingestion (nba_api, scheduled ETL)
+     ↓
+     
+PostgreSQL Warehouse (historical player logs, pace metrics)
+     ↓
+     
+Feature Engineering (pace-adjusted rates, rolling averages, matchup splits)
+     ↓
+     
+Distribution Fitting (Log-Normal: points; Negative Binomial: assists, rebounds)
+     ↓
+     
+Monte Carlo Simulation (10,000 iterations per prop)
+     ↓
+     
+Probability Estimation (P(stat > line) from simulation output)
+     ↓
+     
+Kelly Criterion Sizing (f* = (bp - q) / b on user-inputted odds)
+     ↓
+     
+Streamlit Dashboard (FastAPI backend, real-time output)
+## Installation
+
+### Prerequisites
+- Python 3.11
+- PostgreSQL
+- Docker (optional)
+
+### Environment Variables
+Create a `.env` file in the repo root:
+
+POSTGRES_USER=your_user
+
+POSTGRES_PASSWORD=your_password
+
+ODDS_API_KEY=your_key (Part of original idea, not a part of platform's function)
+### Local Setup
+```bash
+git clone https://github.com/ArkoSamad11/Monte-Carlo-NBA-Prop-Pricing-Engine.git
+cd Monte-Carlo-NBA-Prop-Pricing-Engine
+pip install -r requirements.txt
+uvicorn src.api.main:app --reload --port 8001
+streamlit run app.py
+```
+
+Dashboard available at `http://localhost:8501`.
+
+### Docker
+```bash
+docker-compose up --build
+```
+
+Dashboard available at `http://localhost:8501`.
+## Usage
+
+### Local
+Start the API first:
+```bash
+uvicorn src.api.main:app --reload --port 8001
+```
+
+Then start the dashboard:
+```bash
+streamlit run app.py
+```
+
+Dashboard: `http://localhost:8501`
+API docs: `http://localhost:8001/docs`
+
+### Docker
+```bash
+docker-compose up --build
+```
+
+Dashboard: `http://localhost:8501`
+
+### Using the Dashboard
+1. Select a game from the dropdown
+2. Select a player
+3. Select a stat category
+4. Enter the prop line and odds from your sportsbook or prediction market
+5. Click **Find Mispricing**
+6. Review the Monte Carlo probability, empirical probability, market probability, edge gap, confidence tier, and Kelly Criterion sizing
+## Limitations
+
+- Model parameters derived from L10 rolling window only
+- No injury, rest, or travel adjustment 
+- Calibration analysis in Performance Metrics alludes to reduction in Kelly Sizing in buckets outside of 60-65%
+- Playoff-only evaluation sample (Conference Finals and Finals), performance on regular season markets is untested
+- Odds API integration removed from live product
