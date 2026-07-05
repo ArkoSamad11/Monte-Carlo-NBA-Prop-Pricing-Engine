@@ -126,3 +126,6 @@ Dashboard: `http://localhost:8501`
 - Calibration analysis in Performance Metrics alludes to reduction in Kelly Sizing in buckets outside of 60-65%
 - Playoff-only evaluation sample (Conference Finals and Finals), performance on regular season markets is untested
 - Odds API integration removed from live product
+
+## License
+MIT
