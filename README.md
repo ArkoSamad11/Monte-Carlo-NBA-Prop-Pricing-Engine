@@ -31,7 +31,7 @@ p-value (one-tailed): 0.0026
 95% CI: [51.7%, 59.5%]
 
 ## System Architecture
-
+```
 NBA Stats API
      ↓
      
@@ -57,6 +57,40 @@ Kelly Criterion Sizing (f* = (bp - q) / b on user-inputted odds)
      ↓
      
 Streamlit Dashboard (FastAPI backend, real-time output)
+```
+## Project Structure
+
+```
+Monte-Carlo-NBA-Prop-Pricing-Engine/
+├── src/
+│   ├── api/
+│   │   └── main.py              # FastAPI endpoints, signal logging, caching
+│   ├── analysis/
+│   │   ├── implied_vol.py       # Monte Carlo engine, probability estimation
+│   │   ├── mispricing.py        # Edge detection, confidence tiering
+│   │   └── realized_vol.py      # Log-return volatility calculation
+│   ├── data/
+│   │   ├── nba_client.py        # NBA Stats API data ingestion
+│   │   └── odds_client.py       # Odds API integration
+│   ├── pricer/
+│   │   ├── black_scholes.py     # Research foundation (not in live pipeline)
+│   │   ├── greeks.py            # Research foundation (not in live pipeline)
+│   │   └── newton_raphson.py    # Research foundation (not in live pipeline)
+│   └── db/
+│       └── schema.sql           # PostgreSQL schema
+├── tests/
+│   ├── test_black_scholes.py
+│   ├── test_greeks.py
+│   ├── test_newton_raphson.py
+│   └── test_realized_vol.py
+├── app.py                       # Streamlit dashboard
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── Procfile                     # Railway deployment
+└── pytest.ini
+```
+
 ## Installation
 
 ### Prerequisites
@@ -89,6 +123,20 @@ docker-compose up --build
 ```
 
 Dashboard available at `http://localhost:8501`.
+## Testing
+
+```bash
+pytest
+```
+
+Coverage report:
+
+```bash
+pytest --cov=src/pricer --cov=src/analysis/realized_vol --cov-report=term-missing
+```
+
+48 tests across Black-Scholes, Greeks, Newton-Raphson, and realized volatility modules. 96% coverage. CI runs on every push via GitHub Actions.
+
 ## Usage
 
 ### Local
