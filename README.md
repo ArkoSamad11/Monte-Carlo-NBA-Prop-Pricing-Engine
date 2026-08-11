@@ -1,4 +1,4 @@
-Service Link:
+Service Link (NO GAMES AS OF 8/11/26):
 https://monte-carlo-nba-prop-pricing-engine-z6w7sprmxzddv45rnzq6y5.streamlit.app/
 
 # PropVol: Monte Carlo NBA Player Prop Pricing Engine
