@@ -125,12 +125,13 @@ with col_left:
         opponent_team = home_team
 
     player_id_response = requests.get(
-        f'{BACKEND_URL}/roster',
+        f'{BACKEND_URL}/playerid',
         params={'player_name': manual_player}
     )
-    player_id = player_id_response.json()['id']
-    image_url = 'https://cdn.nba.com/headshots/nba/latest/1040x760/' + str(player_id) + '.png'
-    st.image(image_url, width=180)
+    player_id = player_id_response.json().get('id')
+    if player_id:
+        image_url = 'https://cdn.nba.com/headshots/nba/latest/1040x760/' + str(player_id) + '.png'
+        st.image(image_url, width=180)
 
     bookmaker = st.selectbox('Bookmaker', ['DraftKings', 'FanDuel', 'Kalshi', 'Other'])
 
