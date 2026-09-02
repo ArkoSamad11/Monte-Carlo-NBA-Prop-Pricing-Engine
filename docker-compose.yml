@@ -22,6 +22,8 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/propvol
       ODDS_API_KEY: ${ODDS_API_KEY}
+      # Optional. When unset, the /usage_stats endpoint is disabled and returns 404.
+      USAGE_ADMIN_TOKEN: ${USAGE_ADMIN_TOKEN:-}
     ports:
       - "8001:8001"
     depends_on:

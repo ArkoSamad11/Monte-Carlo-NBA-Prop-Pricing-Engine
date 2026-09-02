@@ -46,3 +46,24 @@ CREATE TABLE game_logs(
     stat_value FLOAT,
     time_stamp TIMESTAMP DEFAULT NOW()
 );
+
+-- Anonymous usage tracking. One row per tracked dashboard interaction.
+-- 'session_id' is a random UUID minted by the Streamlit dashboard once per browser
+-- session and sent with each request. It contains no personal information and is
+-- never derived from IP address, user agent, or any other fingerprint.
+--
+-- IMPORTANT: this counts SESSIONS, not people. Streamlit session state resets when
+-- the browser tab closes or the app sleeps, so one person across five game nights
+-- registers as five sessions. Report the number as distinct sessions.
+CREATE TABLE IF NOT EXISTS usage_events(
+    id SERIAL PRIMARY KEY,
+    session_id VARCHAR(64) NOT NULL,
+    event VARCHAR(64) NOT NULL,      -- 'session_start' or 'price_request'
+    player VARCHAR(255),
+    stat VARCHAR(255),
+    bookmaker VARCHAR(255),
+    time_stamp TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_usage_session ON usage_events (session_id, time_stamp);
+CREATE INDEX IF NOT EXISTS idx_usage_event ON usage_events (event, time_stamp);

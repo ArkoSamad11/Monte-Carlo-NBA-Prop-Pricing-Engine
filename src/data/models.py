@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, Index
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
@@ -47,3 +47,27 @@ class GameLog(Base):
     game_date = Column(DateTime)
     stat_value = Column(Float)
     time_stamp = Column(DateTime, default=datetime.now)
+
+
+# Anonymous usage tracking. One row per tracked dashboard interaction.
+# session_id is a random UUID minted by the Streamlit dashboard once per browser
+# session. It holds no personal information and is not derived from IP address,
+# user agent, or any other fingerprint.
+#
+# This counts sessions, not people: Streamlit session state resets when the tab
+# closes or the app sleeps, so one person across five game nights registers as
+# five sessions. Report the metric as distinct sessions.
+class UsageEvent(Base):
+    __tablename__ = 'usage_events'
+    id = Column(Integer, primary_key=True)
+    session_id = Column(String(64), nullable=False)
+    event = Column(String(64), nullable=False) # 'session_start' or 'price_request'
+    player = Column(String)
+    stat = Column(String)
+    bookmaker = Column(String)
+    time_stamp = Column(DateTime, nullable=False, default=datetime.now)
+
+    __table_args__ = (
+        Index('idx_usage_session', 'session_id', 'time_stamp'),
+        Index('idx_usage_event', 'event', 'time_stamp'),
+    )

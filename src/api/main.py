@@ -1,4 +1,8 @@
-from fastapi import FastAPI
+import hmac
+import os
+from contextlib import asynccontextmanager
+from typing import Optional
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 from functools import lru_cache
 from src.data.odds_client import get_events_ids, get_odds, parse_props
@@ -6,15 +10,25 @@ from src.data.nba_client import stat_information, get_id
 from src.analysis.mispricing import find_mispricing
 from nba_api.stats.endpoints import commonteamroster
 from nba_api.stats.static import teams
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from src.data.db import engine, Session
 from src.data.models import Base, MispricingSignal
+from src.data.usage import ensure_usage_table, record_event, usage_summary
 from datetime import datetime
 
-app = FastAPI()
 
-engine = create_engine('postgresql://localhost/propvol')
-Session = sessionmaker(bind=engine)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Creates the usage_events table on startup if it does not already exist, so a
+    deployment provisioned before usage tracking existed picks it up without a
+    manual migration. Failure is non-fatal: tracking degrades to a no-op.
+    """
+
+    ensure_usage_table()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 class PropModel(BaseModel):
@@ -22,6 +36,14 @@ class PropModel(BaseModel):
     line: float
     over_odds: int
     under_odds: int
+
+
+class UsageEventModel(BaseModel):
+    session_id: str
+    event: str
+    player: Optional[str] = None
+    stat: Optional[str] = None
+    bookmaker: Optional[str] = None
 
 
 @lru_cache(maxsize=128)
@@ -175,7 +197,7 @@ def mispricing(player_name: str, season: str, stat_category: str, prop: PropMode
 
 
 @app.post('/log_signal')
-def log_signal(player_name: str, season: str, stat_category: str, prop: PropModel, bookmaker: str = 'DraftKings', player_team: str = None, opponent_team: str = None):
+def log_signal(player_name: str, season: str, stat_category: str, prop: PropModel, bookmaker: str = 'DraftKings', player_team: str = None, opponent_team: str = None, session_id: str = None):
     """
     Runs mispricing analysis and persists any detected signal to the database.
     Called when the user clicks 'Find Mispricing' in the dashboard after reviewing a prop.
@@ -190,12 +212,19 @@ def log_signal(player_name: str, season: str, stat_category: str, prop: PropMode
                    rules are applied during probability computation (String).
         player_team: Initialized to None. The team that the selected player is on (String).
         opponent_team: Initialized to None. The team the selected player is playing against (String).
+        session_id: Initialized to None. Anonymous per-browser-session UUID sent by the
+                    dashboard for usage tracking. Omitting it skips tracking only, the
+                    analysis is unaffected (String).
     Returns:
         A list containing at most one signal dictionary with probability comparisons,
         edge direction, confidence tier, and simulation data. Empty list if no edge
         exceeds the threshold or if an exception occurs during analysis.
     """
-    
+
+    # Recorded before the analysis runs so a request still counts as usage even when
+    # the pricing pipeline raises or finds no edge. record_event never raises.
+    record_event(session_id, 'price_request', player=player_name, stat=stat_category, bookmaker=bookmaker)
+
     try:
         results = find_mispricing(player_name, season, stat_category,prop.model_dump(),player_team=player_team,opponent_team=opponent_team,bookmaker=bookmaker)
     # Return empty list on any failure to prevent the dashboard from crashing.    
@@ -210,3 +239,56 @@ def log_signal(player_name: str, season: str, stat_category: str, prop: PropMode
     session.commit()
     session.close()
     return results
+
+
+@app.post('/usage')
+def usage(payload: UsageEventModel):
+    """
+    Records a single anonymous usage event from the dashboard.
+
+    Used for the 'session_start' event fired once per browser session. Pricing
+    requests are recorded server side by /log_signal instead, so they cannot be
+    missed. Unrecognized event names are ignored rather than stored.
+
+    Args:
+        payload: Pydantic model containing the session UUID, event name, and optional
+                 player, stat, and bookmaker context (UsageEventModel).
+
+    Returns:
+        A dictionary of the form {'recorded': bool}. Returns recorded=False rather
+        than raising when the database is unreachable, so a tracking outage never
+        surfaces as an error in the dashboard.
+    """
+
+    return {'recorded': record_event(payload.session_id, payload.event, player=payload.player, stat=payload.stat, bookmaker=payload.bookmaker)}
+
+
+@app.get('/usage_stats')
+def usage_stats(x_admin_token: str = Header(None)):
+    """
+    Returns aggregated usage numbers for the developer.
+
+    Protected by the USAGE_ADMIN_TOKEN environment variable and disabled entirely
+    when that variable is unset, so usage data is never publicly readable. Pass the
+    token in the X-Admin-Token request header.
+
+    Args:
+        x_admin_token: Value of the X-Admin-Token request header (String).
+
+    Returns:
+        A dictionary containing distinct session and pricing request counts, the date
+        range covered, per-day activity, and the most requested players and stats.
+
+    Raises:
+        HTTPException: 404 if the endpoint is disabled, 401 if the token is missing
+                       or does not match.
+    """
+
+    expected = os.getenv('USAGE_ADMIN_TOKEN')
+    if not expected:
+        raise HTTPException(status_code=404, detail='Usage stats are disabled. Set USAGE_ADMIN_TOKEN to enable this endpoint.')
+    # compare_digest avoids leaking the token through response timing.
+    if not x_admin_token or not hmac.compare_digest(x_admin_token, expected):
+        raise HTTPException(status_code=401, detail='Invalid or missing X-Admin-Token header.')
+
+    return usage_summary()

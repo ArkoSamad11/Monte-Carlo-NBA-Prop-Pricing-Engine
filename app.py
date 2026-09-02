@@ -16,7 +16,27 @@ import requests
 from datetime import datetime
 import plotly.graph_objects as go
 import os
+import uuid
 BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:8001')
+
+# Anonymous usage tracking. A random UUID is minted once per browser session and
+# sent with each pricing request so distinct sessions and request volume can be
+# measured. No IP address, user agent, or fingerprint is collected.
+#
+# This counts sessions, not people: Streamlit clears session state when the tab
+# closes or when the hosted app sleeps, so the same person on five game nights
+# produces five session IDs.
+if 'session_id' not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
+    # Fire and forget. A tracking outage must never block the dashboard from loading.
+    try:
+        requests.post(
+            f'{BACKEND_URL}/usage',
+            json={'session_id': st.session_state.session_id, 'event': 'session_start'},
+            timeout=3
+        )
+    except requests.RequestException:
+        pass
 
 
 @st.cache_data(ttl=1800)
@@ -184,7 +204,8 @@ with col_right:
                     'stat_category': manual_stat.lower(),
                     'bookmaker': bookmaker,
                     'player_team': player_team,
-                    'opponent_team': opponent_team
+                    'opponent_team': opponent_team,
+                    'session_id': st.session_state.session_id
                 },
                 json=manual_prop
             )
