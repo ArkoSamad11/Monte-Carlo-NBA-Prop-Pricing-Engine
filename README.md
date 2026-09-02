@@ -73,8 +73,11 @@ Monte-Carlo-NBA-Prop-Pricing-Engine/
 │   │   ├── mispricing.py        # Edge detection, confidence tiering
 │   │   └── realized_vol.py      # Log-return volatility calculation
 │   ├── data/
+│   │   ├── db.py                # Shared engine and session factory
+│   │   ├── models.py            # SQLAlchemy table definitions
 │   │   ├── nba_client.py        # NBA Stats API data ingestion
-│   │   └── odds_client.py       # Odds API integration
+│   │   ├── odds_client.py       # Odds API integration
+│   │   └── usage.py             # Anonymous usage tracking, fail-safe
 │   ├── pricer/
 │   │   ├── black_scholes.py     # Research foundation (not in live pipeline)
 │   │   ├── greeks.py            # Research foundation (not in live pipeline)
@@ -86,6 +89,8 @@ Monte-Carlo-NBA-Prop-Pricing-Engine/
 │   ├── test_greeks.py
 │   ├── test_newton_raphson.py
 │   └── test_realized_vol.py
+├── scripts/
+│   └── usage_report.py          # Prints usage numbers to the terminal
 ├── app.py                       # Streamlit dashboard
 ├── Dockerfile
 ├── docker-compose.yml
